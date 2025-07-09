@@ -17,9 +17,9 @@ pipeline {
 
     stage('Build Backend') {
       steps {
-        echo '🔧 Building Java backend...'
+        echo '🔧 Building Java backend with Gradle...'
         dir('backend') {
-          sh './gradlew build || mvn clean package' // Adjust based on your build tool
+          sh './gradlew build'
         }
       }
     }
@@ -37,9 +37,12 @@ pipeline {
     stage('Upload to S3') {
       steps {
         echo '☁️ Uploading artifacts to S3...'
-        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-jenkins']]) {
-          dir('backend') {
-            sh 'aws s3 cp build/libs/ s3://$BACKEND_BUCKET/ --recursive --region $AWS_REGION'
+        withCredentials([[
+          $class: 'AmazonWebServicesCredentialsBinding',
+          credentialsId: 'aws-jenkins'
+        ]]) {
+          dir('backend/build/libs') {
+            sh 'aws s3 cp . s3://$BACKEND_BUCKET/ --recursive --region $AWS_REGION'
           }
           dir('frontend/build') {
             sh 'aws s3 cp . s3://$FRONTEND_BUCKET/ --recursive --region $AWS_REGION'
@@ -58,3 +61,4 @@ pipeline {
     }
   }
 }
+
