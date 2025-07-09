@@ -10,14 +10,14 @@ pipeline {
   stages {
     stage('Clone Repo') {
       steps {
-        echo '✅ Cloning the GitHub repository...'
+        echo '✅ Cloning GitHub repository...'
         checkout scm
       }
     }
 
     stage('Build Backend') {
       steps {
-        echo '🔧 Building Java backend with Gradle...'
+        echo '🔧 Building Java backend...'
         dir('backend') {
           sh './gradlew build'
         }
@@ -27,7 +27,7 @@ pipeline {
     stage('Build Frontend') {
       steps {
         echo '🎨 Building React frontend...'
-        dir('frontend') {
+        dir('frontend/frontend') {
           sh 'npm install'
           sh 'npm run build'
         }
@@ -37,14 +37,13 @@ pipeline {
     stage('Upload to S3') {
       steps {
         echo '☁️ Uploading artifacts to S3...'
-        withCredentials([[
-          $class: 'AmazonWebServicesCredentialsBinding',
-          credentialsId: 'aws-jenkins'
-        ]]) {
+        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-jenkins']]) {
           dir('backend/build/libs') {
+            sh 'ls -l'
             sh 'aws s3 cp . s3://$BACKEND_BUCKET/ --recursive --region $AWS_REGION'
           }
-          dir('frontend/build') {
+          dir('frontend/frontend/build') {
+            sh 'ls -l'
             sh 'aws s3 cp . s3://$FRONTEND_BUCKET/ --recursive --region $AWS_REGION'
           }
         }
